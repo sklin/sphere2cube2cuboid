@@ -1,7 +1,7 @@
 #include "ImageProcessor.h"
 #include "mHeader.hpp"
 #include "lz4.h"
-#include <omp.h>
+//#include <omp.h>
 #include <cstdio>
 
 #define BUFFER_SIZE 10240000
@@ -10,17 +10,17 @@ char* ImageProcessor::process(int &returnSize) {
     cv::Mat img = cv::imread("input/image_001.tiff", CV_LOAD_IMAGE_UNCHANGED);
     std::vector<cv::Mat*> cubeImg, cuboidImg;
 
-    double executeStartTime = omp_get_wtime();
+    //double executeStartTime = omp_get_wtime();
     sphere2cube(img, cubeImg, 1024);
-    double executeMiddleTime = omp_get_wtime();
+    //double executeMiddleTime = omp_get_wtime();
     cube2cuboid(cubeImg, cuboidImg);
-    double executeStopTime = omp_get_wtime();
+    //double executeStopTime = omp_get_wtime();
 
     // Make packet
     char *buffer = new char [BUFFER_SIZE]; // it will be free in MessageQueue::Pop()
 
     // Body (Compress)
-    double compressStartTime = omp_get_wtime();
+    //double compressStartTime = omp_get_wtime();
     int compressSize[6] = {0};
     int ptr = 0 + 66; // 66: header's length
     for(int i=0 ; i<6 ; i++) {
@@ -34,7 +34,7 @@ char* ImageProcessor::process(int &returnSize) {
         //std::cout << "Before compress, size = " << cuboidImg[i]->total() * cuboidImg[i]->elemSize() << std::endl;
         //std::cout << "After compressed, size = " << ret << std::endl;
     }
-    double compressStopTime = omp_get_wtime();
+    //double compressStopTime = omp_get_wtime();
 
     // Header
     snprintf(buffer, 66, "%010d;%010d;%010d;%010d;%010d;%010d",
@@ -49,12 +49,12 @@ char* ImageProcessor::process(int &returnSize) {
         delete cuboidImg[i];
     }
 
-    std::cout << "Spent: " << (compressStopTime - compressStartTime) + (executeStopTime - executeStartTime) << " sec" << std::endl;
-    std::cout << "\tSphere -> Cube: " << executeMiddleTime - executeStartTime << " sec" << std::endl;
-    std::cout << "\tCube -> Cuboid: " << executeStopTime - executeMiddleTime << " sec" << std::endl;
-    std::cout << "\tCompress: " << compressStopTime - compressStartTime << " sec" << std::endl;
-    std::cout << "\tTotal size: " << ptr << std::endl;
-    std::cout << "Finish" << std::endl;
+    //std::cout << "Spent: " << (compressStopTime - compressStartTime) + (executeStopTime - executeStartTime) << " sec" << std::endl;
+    //std::cout << "\tSphere -> Cube: " << executeMiddleTime - executeStartTime << " sec" << std::endl;
+    //std::cout << "\tCube -> Cuboid: " << executeStopTime - executeMiddleTime << " sec" << std::endl;
+    //std::cout << "\tCompress: " << compressStopTime - compressStartTime << " sec" << std::endl;
+    //std::cout << "\tTotal size: " << ptr << std::endl;
+    //std::cout << "Finish" << std::endl;
 
     returnSize = ptr; // TODO:
     return buffer;
