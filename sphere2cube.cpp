@@ -79,8 +79,12 @@ void filter_linear(const cv::Mat* img, float i, float j, float* p)
 
     for(int k=0; k<3; k++) {
         p[k] += lerp(
-            lerp(img->at<cv::Vec3b>(i0, j0)[k], img->at<cv::Vec3b>(i0, j1)[k], dj),
-            lerp(img->at<cv::Vec3b>(i1, j0)[k], img->at<cv::Vec3b>(i1, j1)[k], dj),
+            //lerp(img->at<cv::Vec3b>(i0, j0)[k], img->at<cv::Vec3b>(i0, j1)[k], dj),
+            //lerp(img->at<cv::Vec3b>(i1, j0)[k], img->at<cv::Vec3b>(i1, j1)[k], dj),
+            //lerp(img->ptr<cv::Vec3b>(i0)[j0][k], img->ptr<cv::Vec3b>(i0)[j1][k], dj),
+            //lerp(img->ptr<cv::Vec3b>(i1)[j0][k], img->ptr<cv::Vec3b>(i1)[j1][k], dj),
+            lerp(img->ptr<uchar>(i0)[j0*3 + k], img->ptr<uchar>(i0)[j1*3 + k], dj),
+            lerp(img->ptr<uchar>(i1)[j0*3 + k], img->ptr<uchar>(i1)[j1*3 + k], dj),
             di
             );
     }
@@ -152,7 +156,9 @@ void supersample(
         filter_linear(src, I, J, p);
     }
     for(int k=0 ; k<3 ; k++) {
-        dst->at<cv::Vec3b>(i, j)[k] = p[k] / (rgss_pattern_size);
+        //dst->at<cv::Vec3b>(i, j)[k] = p[k] / (rgss_pattern_size);
+        //dst->ptr<cv::Vec3b>(i)[j][k] = p[k] / (rgss_pattern_size);
+        dst->ptr<uchar>(i)[j*3 + k] = p[k] / (rgss_pattern_size);
     }
 }
 
@@ -161,13 +167,16 @@ void supersample(
 //////////////////////////////////////////////////
 bool process(
     cv::Mat* src,
-    std::vector<cv::Mat*>& dst
+    std::vector<cv::Mat*>& dst,
+    unsigned size
     )
 {
-    if( dst.size()<1 ) return false;
+    for(int i=0 ; i<6 ; i++) {
+        dst.push_back(new cv::Mat(size, size, CV_8UC3, cv::Scalar(0, 0, 0)));
+    }
 
-    int i, j;
-    unsigned f;
+    int i = 0, j = 0;
+    unsigned f = 0;
     #pragma omp parallel for private(j, f)
     for(i=0 ; i<dst[0]->rows ; i++) {
         for(j=0 ; j<dst[0]->cols ; j++) {
@@ -185,11 +194,7 @@ bool process(
 
 void sphere2cube(cv::Mat& src, std::vector<cv::Mat*>& dst, unsigned size)
 {
-    for(int i=0 ; i<6 ; i++) {
-        dst.push_back(new cv::Mat(size, size, CV_8UC3, cv::Scalar(0, 0, 0)));
-    }
-
-    process(&src, dst);
+    process(&src, dst, size);
 }
 
 //////////////////////////////////////////////////
