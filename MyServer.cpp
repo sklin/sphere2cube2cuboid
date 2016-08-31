@@ -75,7 +75,16 @@ void MyServer::CloseClient()
 
 int MyServer::Send(const void *buf, size_t len)
 {
-    return send(clientSockfd, buf, len, 0);
+    const char *chrbuf = (const char*) buf;
+    int start = 0;
+    while(len>0) {
+        int ret = send(clientSockfd, chrbuf + start, len, 0);
+        len -= ret;
+        start += ret;
+    }
+
+    return 0;
+    //return send(clientSockfd, buf, len, 0);
 }
 
 int MyServer::Recv(void *buf, size_t len)

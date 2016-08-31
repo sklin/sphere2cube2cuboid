@@ -23,23 +23,44 @@ char* ImageProcessor::process(int &returnSize) {
     //double compressStartTime = omp_get_wtime();
     int compressSize[6] = {0};
     int ptr = 0 + 66; // 66: header's length
+
+    int order[6] = { 4, 5, 0, 1, 2, 3};
+
     for(int i=0 ; i<6 ; i++) {
+        // 3-channel to 4-channel
+        cv::Mat mat(cuboidImg[order[i]]->size().height, cuboidImg[order[i]]->size().width, CV_8UC4);
+        cv::cvtColor(*cuboidImg[order[i]], mat, CV_BGR2BGRA, 4); 
+
+        // lz4 compress
         int ret = LZ4_compress_default(
-            reinterpret_cast<const char*>(cuboidImg[i]->data),
+            reinterpret_cast<const char*>(mat.data),
             buffer+ptr,
-            cuboidImg[i]->total() * cuboidImg[i]->elemSize(),
+            mat.total() * mat.elemSize(),
             BUFFER_SIZE-ptr);
         ptr += ret;
-        compressSize[i] = ret;
+        compressSize[order[i]] = ret;
         //std::cout << "Before compress, size = " << cuboidImg[i]->total() * cuboidImg[i]->elemSize() << std::endl;
         //std::cout << "After compressed, size = " << ret << std::endl;
+        //std::cout << "i: " << order[i] << ", before compress, size = " << cuboidImg[order[i]]->total() * cuboidImg[order[i]]->elemSize() << std::endl;
+        //std::cout << "i: " << order[i] << ", compressed, size = " << ret << std::endl;
+        //std::cout << "h: " << cuboidImg[order[i]]->size().height << ", w: " << cuboidImg[order[i]]->size().width << std::endl;
+
+        {
+            // int LZ4_decompress_safe (const char* source, char* dest, int compressedSize, int maxDecompressedSize);
+            char *lz4_buffer = new char[5000000];
+
+            int result = LZ4_decompress_safe(buffer+ptr-ret, lz4_buffer, ret, 5000000);
+            std::cout << "result : " << result << std::endl;
+
+            delete[] lz4_buffer;
+        }
     }
     //double compressStopTime = omp_get_wtime();
 
     // Header
     snprintf(buffer, 66, "%010d;%010d;%010d;%010d;%010d;%010d",
-        compressSize[0], compressSize[1], compressSize[2],
-        compressSize[3], compressSize[4], compressSize[5]
+        compressSize[order[0]], compressSize[order[1]], compressSize[order[2]],
+        compressSize[order[3]], compressSize[order[4]], compressSize[order[5]]
     );
     buffer[65] = ';';
     

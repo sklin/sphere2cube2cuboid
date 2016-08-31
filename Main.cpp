@@ -39,6 +39,11 @@ void* Thread_Socket(void* ptr)
 
             // response to client
             if(messageQueue.Size() > 0 ) {
+                {
+                    const char *sndbuf = "1;";
+                    int nsend = server.Send(sndbuf, strlen(sndbuf));
+                }
+
                 char *sndbuf = messageQueue.front()->buffer;
                 int sendLength = messageQueue.front()->length;
                 int nsend = server.Send(sndbuf, sendLength);
@@ -47,7 +52,7 @@ void* Thread_Socket(void* ptr)
             }
             else {
                 // current no message
-                const char *sndbuf = "Current no message\n";
+                const char *sndbuf = "0;";
                 int nsend = server.Send(sndbuf, strlen(sndbuf));
             }
 
